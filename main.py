@@ -71,27 +71,18 @@ async def analyze(request: Request):
 Expected sentence: "{expected}"
 Child said: "{child}"
 
-Give short, positive, child-friendly feedback (2-3 sentences max). Encourage the child and gently note any mistakes.
+Give short, positive, child-friendly feedback (2-3 sentences max).
 
 Feedback:"""
 
     async with httpx.AsyncClient(timeout=60.0) as client:
         response = await client.post(
-            API_URL,
-            headers=HEADERS,
-            json={
-                "inputs": prompt,
-                "parameters": {
-                    "max_new_tokens": 120,
-                    "temperature": 0.7,
-                    "return_full_text": False
-                }
-            }
+            API_URL, headers=HEADERS,
+            json={"inputs": prompt, "parameters": {"max_new_tokens": 120, "temperature": 0.7, "return_full_text": False}}
         )
 
     result = response.json()
     feedback_text = ""
-
     if isinstance(result, list) and len(result) > 0:
         feedback_text = result[0].get("generated_text", "")
     elif isinstance(result, dict):
