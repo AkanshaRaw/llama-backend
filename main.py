@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 import httpx
 import os
+
 app = FastAPI()
 
 API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"
@@ -8,13 +9,15 @@ API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Inst
 HEADERS = {
     "Authorization": f"Bearer {os.getenv('HF_TOKEN')}"
 }
+
 @app.get("/")
 def home():
     return {"message": "LLaMA API running"}
 
-@app.route("/analyze", methods=["POST"])
-def analyze():
-    data = request.json
+
+@app.post("/analyze")
+async def analyze(request: Request):
+    data = await request.json()
 
     expected = data.get("expected_text")
     child = data.get("child_text")
@@ -32,8 +35,15 @@ Instructions:
 - Keep response short and child-friendly
 """
 
-    response = model.generate(prompt)
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            API_URL,
+            headers=HEADERS,
+            json={"inputs": prompt}
+        )
 
-    return jsonify({
-        "feedback": response
-    })
+    result = response.json()
+
+    return {
+        "feedback": result
+    }
